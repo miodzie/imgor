@@ -20,7 +20,6 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
-	"imgor/web"
 	"io"
 	"log"
 	"log/slog"
@@ -137,13 +136,44 @@ func main() {
 
 				w.Header().Set("Content-Type", "image/png")
 				w.Header().Set("Content-Length", strconv.FormatInt(img.Size, 10))
+				w.Header().Set("Cache-Control", "no-cache")
 				return
 			}
 		}
 	})
 
 	// todo restore uploading to root / path would be nice
-	r.Handle("/", http.FileServer(http.FS(web.Content)))
+	//r.Handle("/", http.FileServer(http.FS(web.Content)))
+
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// pick random
+		images, err := storage.Images()
+		if check(err, w) {
+			return
+		}
+		if len(images) == 0 {
+			return
+		}
+		randI := rand.Intn(len(images))
+		for i, img := range images {
+			if i == randI {
+				f, err := img.File()
+				if check(err, w) {
+					return
+				}
+
+				_, err = io.Copy(w, f)
+				if check(err, w) {
+					return
+				}
+
+				w.Header().Set("Content-Type", "image/png")
+				w.Header().Set("Content-Length", strconv.FormatInt(img.Size, 10))
+				w.Header().Set("Cache-Control", "no-cache")
+				return
+			}
+		}
+	})
 
 	r.HandleFunc("/{img}", func(w http.ResponseWriter, r *http.Request) {
 		// CLEAN VERY IMPORTANT!!
