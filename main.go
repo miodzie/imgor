@@ -20,6 +20,7 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
+	"imgor/web"
 	"io"
 	"log"
 	"log/slog"
@@ -94,9 +95,18 @@ func main() {
 	})
 
 	r.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			f, err := web.Content.ReadFile("upload.html")
+			if check(err, w) {
+				return
+			}
+			w.Write(f)
+			return
+		}
+
 		if r.Method == "POST" {
 			// todo auth middleware
-			if r.Header.Get("Authorization") != "Bearer "+authToken {
+			if r.Header.Get("Authorization") != "Bearer "+authToken && r.FormValue("password") != authToken {
 				json.NewEncoder(w).Encode(map[string]any{"msg": "sorry fren, private use for now"})
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
@@ -244,7 +254,7 @@ func check(err error, w http.ResponseWriter) bool {
 }
 
 func notify(err error) {
-	if err != nil {
+	if err != nil && os.Getenv("BUGSNAG_API_KEY") != "" {
 		bugsnag.Notify(err)
 	}
 }

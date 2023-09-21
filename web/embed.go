@@ -7,5 +7,5 @@ import (
 
 // content holds our static web server content
 //
-//go:embed index.html *.js
+//go:embed *.html *.js
 var Content embed.FS
