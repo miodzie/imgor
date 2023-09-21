@@ -95,7 +95,7 @@ func main() {
 	})
 
 	r.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
+		if r.Method == "GET" && r.URL.Query().Get("key") == authToken {
 			f, err := web.Content.ReadFile("upload.html")
 			if check(err, w) {
 				return
@@ -120,6 +120,8 @@ func main() {
 			uploadImage(w, r)
 			return
 		}
+
+		w.WriteHeader(http.StatusNotFound)
 	})
 
 	r.HandleFunc("/random", func(w http.ResponseWriter, r *http.Request) {
